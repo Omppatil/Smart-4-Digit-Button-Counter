@@ -1,0 +1,146 @@
+C51 COMPILER V9.60.7.0   MAIN                                                              07/09/2025 17:36:08 PAGE 1   
+
+
+C51 COMPILER V9.60.7.0, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN .\Objects\main.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE main.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings\main
+                    -.lst) TABS(2) OBJECT(.\Objects\main.obj)
+
+line level    source
+
+   1          #include <REGX51.H>
+   2          
+   3          // Segment codes for 0–9 (Common Cathode)
+   4          unsigned char seg_code[10] = {
+   5              0x3F, 0x06, 0x5B, 0x4F,
+   6              0x66, 0x6D, 0x7D, 0x07,
+   7              0x7F, 0x6F
+   8          };
+   9          
+  10          // Digit select pins (Active LOW)
+  11          sbit DIG1 = P0^0;
+  12          sbit DIG2 = P0^1;
+  13          sbit DIG3 = P0^2;
+  14          sbit DIG4 = P0^3;
+  15          
+  16          // Buttons
+  17          sbit MANUAL_BTN = P3^3;
+  18          sbit RESET_BTN  = P3^4;
+  19          
+  20          // Global variables
+  21          unsigned int number = 0;
+  22          bit is_auto_mode = 0;
+  23          bit manual_flag = 0;
+  24          bit reset_flag = 0;
+  25          
+  26          unsigned int timer_count = 0;
+  27          unsigned char digit_index = 0;
+  28          unsigned char digits[4];   // ? Declare globally
+  29          
+  30          // INT0 toggles auto/manual mode
+  31          void external0_ISR(void) interrupt 0 {
+  32   1          is_auto_mode = !is_auto_mode;
+  33   1      }
+  34          
+  35          // Timer0 ISR – every 2ms
+  36          void timer0_ISR(void) interrupt 1 {
+  37   1          TH0 = 0xF8;   // Reload for ~2ms (11.0592 MHz)
+  38   1          TL0 = 0x30;
+  39   1      
+  40   1          // Update digits array
+  41   1          digits[0] = number / 1000;
+  42   1          digits[1] = (number / 100) % 10;
+  43   1          digits[2] = (number / 10) % 10;
+  44   1          digits[3] = number % 10;
+  45   1      
+  46   1          // Turn off all digits
+  47   1          DIG1 = DIG2 = DIG3 = DIG4 = 1;
+  48   1      
+  49   1          // Output segment for current digit
+  50   1          P2 = seg_code[digits[digit_index]];
+  51   1      
+  52   1          switch (digit_index) {
+  53   2              case 0: DIG1 = 0; break;
+  54   2              case 1: DIG2 = 0; break;
+C51 COMPILER V9.60.7.0   MAIN                                                              07/09/2025 17:36:08 PAGE 2   
+
+  55   2              case 2: DIG3 = 0; break;
+  56   2              case 3: DIG4 = 0; break;
+  57   2          }
+  58   1      
+  59   1          digit_index = (digit_index + 1) % 4;
+  60   1      
+  61   1          // Count 2ms intervals to reach 1 second
+  62   1          if (is_auto_mode) {
+  63   2              timer_count++;
+  64   2              if (timer_count >= 500) {  // 500 × 2ms = 1s
+  65   3                  timer_count = 0;
+  66   3                  number++;
+  67   3                  if (number > 9999) number = 0;
+  68   3              }
+  69   2          }
+  70   1      }
+  71          
+  72          // Short delay (~2–3 us per count)
+  73          void delay_us(unsigned int us) {
+  74   1          while (us--) {
+  75   2              unsigned char i;
+  76   2              for (i = 0; i < 5; i++);
+  77   2          }
+  78   1      }
+  79          
+  80          void main() {
+  81   1          // Port setup
+  82   1          P0 = 0xFF;  // Digit control output (active LOW)
+  83   1          P2 = 0x00;  // Segment output
+  84   1          P3 = 0xFF;  // Enable pull-ups
+  85   1      
+  86   1          // INT0 setup (toggle mode)
+  87   1          IT0 = 1;    // Edge triggered
+  88   1          EX0 = 1;
+  89   1          EA = 1;
+  90   1      
+  91   1          // Timer0 setup for ~2ms
+  92   1          TMOD = 0x01;    // Timer0 Mode 1
+  93   1          TH0 = 0xF8;
+  94   1          TL0 = 0x30;
+  95   1          ET0 = 1;        // Enable Timer0 interrupt
+  96   1          TR0 = 1;        // Start Timer0
+  97   1      
+  98   1          while (1) {
+  99   2              // Manual mode counting
+ 100   2              if (!is_auto_mode) {
+ 101   3                  if (MANUAL_BTN == 0 && manual_flag == 0) {
+ 102   4                      manual_flag = 1;
+ 103   4                      number++;
+ 104   4                      if (number > 9999) number = 0;
+ 105   4                  } else if (MANUAL_BTN == 1) {
+ 106   4                      manual_flag = 0;
+ 107   4                  }
+ 108   3              }
+ 109   2      
+ 110   2              // Reset button logic
+ 111   2              if (RESET_BTN == 0 && reset_flag == 0) {
+ 112   3                  reset_flag = 1;
+ 113   3                  number = 0;
+ 114   3              } else if (RESET_BTN == 1) {
+ 115   3                  reset_flag = 0;
+ 116   3              }
+C51 COMPILER V9.60.7.0   MAIN                                                              07/09/2025 17:36:08 PAGE 3   
+
+ 117   2          }
+ 118   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    331    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     19       1
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =      3    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

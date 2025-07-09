@@ -1,0 +1,4 @@
+".\Objects\STARTUP.obj",
+".\Objects\main.obj" 
+TO ".\Objects\Smart_4-Digit_Button_Counter" 
+PRINT(".\Listings\Smart_4-Digit_Button_Counter.m51")
