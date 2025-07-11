@@ -1,7 +1,7 @@
 # Smart-4-Digit-Button-Counter
 
 # Discription
-This project simulates a 4-digit 7-segment counter using the AT89C51 microcontroller. An external interrupt toggles between auto and manual counting modes. Manual increment and reset are controlled by push buttons. Designed in Proteus and coded in Embedded C using Keil µVision IDE, it’s a great project for learning interrupts and display multiplexing.
+This project features a 4-digit 7-segment display counter using the AT89C51 microcontroller. An external interrupt switches between auto-counting and manual mode. One button increments the count manually, and another resets it. The circuit is simulated in Proteus, and the code is written in Embedded C using Keil µVision IDE. It’s ideal for learning interrupt handling and display multiplexing.
 
 # Features
 - 4-digit 7-segment multiplexing  
